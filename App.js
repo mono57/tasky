@@ -1,7 +1,7 @@
-import React from "react";
+import React, { Component } from "react";
 import { StyleSheet, Text, View, Checkbox, Button } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import CheckBox from '@react-native-community/checkbox';
+import CheckBox from "@react-native-community/checkbox";
 
 import tasks from "./data";
 
@@ -12,28 +12,122 @@ const Header = () => (
   </View>
 );
 
-const Task = () => (
+const Task = ({ name, completed, handleOnValueChange }) => (
   <View style={styles.task}>
-    <CheckBox />
-    <Text>Lorem ipsum dolor sit amet.</Text>
+    <CheckBox value={completed} onValueChange={handleOnValueChange} />
+    <Text>{name}</Text>
   </View>
 );
 
-const EmptyScreenContainer = () => (
+const EmptyScreenContainer = ({ onShowDialog }) => (
   <View style={styles.emptyContainer}>
-    <Button title="Add new task" />
+    <Button title="Add new task" onPress={() => onShowDialog(true)} />
   </View>
 );
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Header />
-      <Task />
-      {!tasks && <EmptyScreenContainer />}
-    </View>
-  );
+const TaskGroup = ({ title, tasks, handleOnValueChange }) => {
+  if (tasks.length >= 1) {
+    return (
+      <View style={styles.taskGroup}>
+        <Text style={styles.taskGroupTitle}>{title}</Text>
+        {tasks.map((task) => (
+          <Task
+            key={task.id}
+            name={task.name}
+            completed={task.completed}
+            handleOnValueChange={() => handleOnValueChange(task)}
+          />
+        ))}
+      </View>
+    );
+  }
+  return null;
+};
+
+class App extends Component {
+  state = {
+    tasks: tasks,
+    isDialogVisible: false,
+  };
+
+  handleOnValueChange = (task) => {
+    const { tasks } = this.state;
+    if (task.completed) {
+      task.completed = false;
+    } else {
+      task.completed = true;
+    }
+    const _task = tasks.filter((t) => t.id == task.id)[0];
+    const index = tasks.indexOf(_task);
+    tasks[index] = _task;
+    this.setState({ tasks: tasks });
+  };
+
+  sendInput = (input) => {};
+
+  showDialog = (state) => {
+    this.setState({ isDialogVisible: state });
+  };
+
+  render() {
+    const { tasks, isDialogVisible } = this.state;
+    const completedTasks = tasks.filter((task) => task.completed == true);
+    const incompletedTasks = tasks.filter((task) => task.completed == false);
+
+    if (tasks.length >= 1) {
+      return (
+        <View style={styles.content}>
+          <TaskGroup
+            tasks={incompletedTasks}
+            title={"All tasks"}
+            handleOnValueChange={this.handleOnValueChange}
+          />
+          <View
+            style={{
+              padding: 10,
+            }}
+          />
+          <TaskGroup
+            title={"Completed tasks"}
+            tasks={completedTasks}
+            handleOnValueChange={this.handleOnValueChange}
+          />
+         
+        </View>
+      );
+    }
+    return (
+      <View style={styles.container}>
+        
+        <EmptyScreenContainer onShowDialog={this.showDialog} />
+      </View>
+    );
+  }
 }
+
+export default App;
+
+// export default function App() {
+//   console.log(tasks)
+//   if (tasks) {
+//     return (
+//       <View style={styles.content}>
+//         <TaskGroup tasks={tasks} title={"All tasks"} />
+//         <View
+//           style={{
+//             padding: 10,
+//           }}
+//         />
+//         <TaskGroup title={"Completed tasks"} tasks={tasks} />
+//       </View>
+//     );
+//   }
+//   return (
+//     <View style={styles.container}>
+//       <EmptyScreenContainer />
+//     </View>
+//   );
+// }
 
 const styles = StyleSheet.create({
   container: {
@@ -47,9 +141,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    padding: "10%",
+    padding: "8%",
   },
   header: {
+    flex: 1 / 6,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -58,11 +153,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 25,
     // marginTop: 25
   },
+  content: {
+    flex: 5 / 6,
+    padding: "10%",
+  },
   headerTitle: {
     fontSize: 18,
     color: "#FFF",
   },
   task: {
     flexDirection: "row",
+    alignItems: "center",
+  },
+  taskGroup: {},
+  taskGroupTitle: {
+    margin: "2%",
   },
 });
